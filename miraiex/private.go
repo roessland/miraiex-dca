@@ -1,4 +1,4 @@
-package main
+package miraiex
 
 import (
 	"bytes"
@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strconv"
 )
 
 func (c *Client) PrivateGetJson(url string, v interface{}) error {
@@ -25,13 +24,14 @@ func (c *Client) PrivateGetJson(url string, v interface{}) error {
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode < 200 || 300 <= resp.StatusCode {
-		return errors.New(fmt.Sprintf("Got status code %d", resp.StatusCode))
-	}
-
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
+	}
+	log.Print("Response body:", string(body))
+
+	if resp.StatusCode < 200 || 300 <= resp.StatusCode {
+		return errors.New(fmt.Sprintf("Got status code %d", resp.StatusCode))
 	}
 
 	err = json.Unmarshal(body, v)
@@ -62,15 +62,15 @@ func (c *Client) PrivatePostJson(url string, requestV, responseV interface{}) er
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode < 200 || 300 <= resp.StatusCode {
-		return errors.New(fmt.Sprintf("Got status code %d", resp.StatusCode))
-	}
-
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
 	log.Print("Response body:", string(body))
+
+	if resp.StatusCode < 200 || 300 <= resp.StatusCode {
+		return errors.New(fmt.Sprintf("Got status code %d", resp.StatusCode))
+	}
 
 	err = json.Unmarshal(body, responseV)
 	if err != nil {
@@ -83,36 +83,9 @@ type BalancesResponse []Balance
 
 type Balance struct {
 	Currency  string  `json:"currency"`
-	Balance   float64 `json:"balance"`
-	Hold      float64 `json:"hold"`
-	Available float64 `json:"available"`
-}
-
-func (b *Balance) UnmarshalJSON(data []byte) error {
-	var err error
-	v := make(map[string]string)
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-
-	b.Currency = v["currency"]
-
-	b.Balance, err = strconv.ParseFloat(v["balance"], 10)
-	if err != nil {
-		return err
-	}
-
-	b.Hold, err = strconv.ParseFloat(v["hold"], 10)
-	if err != nil {
-		return err
-	}
-
-	b.Available, err = strconv.ParseFloat(v["available"], 10)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	Balance   Amount `json:"balance"`
+	Hold      Amount `json:"hold"`
+	Available Amount `json:"available"`
 }
 
 func (c *Client) GetBalances() (BalancesResponse, error) {

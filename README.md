@@ -39,3 +39,8 @@ main.BalancesResponse{
 ## Bruk (Linux)
 
 1. Lag en systemd cronjob som regelmessig kjører programmet.
+
+# MiraiEx Go (golang) API client
+
+Mappen `miraiex` inneholder et bibliotek som kan brukes til å snakke med
+MiraiEx sitt API.
