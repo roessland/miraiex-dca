@@ -25,3 +25,11 @@ type Client struct {
 func NewClient() *Client {
 	return &Client{}
 }
+
+// SetAuthentication sets access tokens for MiraiEx, allowing use of private APIs
+func (c *Client) SetAuthentication(apiKey, clientID, secretKey string) *Client {
+	c.ApiKey = apiKey
+	c.ClientID = clientID
+	c.SecretKey = secretKey
+	return c
+}
