@@ -13,9 +13,9 @@ func main() {
 	// Configure API access keys.
 	// Get them here: https://platform.miraiex.com/client/settings/apikey
 	// Enable Write permission at your own peril.
-	client.ApiKey = ApiKey
-	client.ClientID = ClientID
-	client.SecretKey = SecretKey
+	client.apiKey = ApiKey
+	client.clientID = ClientID
+	client.secretKey = SecretKey
 
 	// Get current server time
 	millis, err := miraiex.GetServerTime()

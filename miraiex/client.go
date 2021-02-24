@@ -2,6 +2,7 @@ package miraiex
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 )
 
 const ApiBase = "https://api.miraiex.com"
@@ -16,20 +17,23 @@ func BuildURL(path string, args ...interface{}) string {
 
 // Client interacts with MiraiEx.
 type Client struct {
-	ApiKey    string
-	ClientID  string
-	SecretKey string
+	apiKey    string
+	clientID  string
+	secretKey string
+	logger *logrus.Logger
 }
 
 // NewClient creates a new client.
-func NewClient() *Client {
-	return &Client{}
+func NewClient(logger *logrus.Logger) *Client {
+	c := &Client{}
+	c.logger = logger
+	return c
 }
 
 // SetAuthentication sets access tokens for MiraiEx, allowing use of private APIs
 func (c *Client) SetAuthentication(apiKey, clientID, secretKey string) *Client {
-	c.ApiKey = apiKey
-	c.ClientID = clientID
-	c.SecretKey = secretKey
+	c.apiKey = apiKey
+	c.clientID = clientID
+	c.secretKey = secretKey
 	return c
 }

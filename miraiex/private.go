@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 func (c *Client) PrivateGetJson(url string, v interface{}) error {
@@ -15,8 +16,10 @@ func (c *Client) PrivateGetJson(url string, v interface{}) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Add("miraiex-access-key", c.ApiKey)
+	req.Header.Add("miraiex-access-key", c.apiKey)
 
+	c.logger.Println("GET", url)
+	c.logger.Println("GET headers", maskSecretHeaders(req.Header))
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Fatal(err)
@@ -28,7 +31,9 @@ func (c *Client) PrivateGetJson(url string, v interface{}) error {
 	if err != nil {
 		return err
 	}
-	log.Print("Response body:", string(body))
+	code := strconv.Itoa(resp.StatusCode)
+	c.logger.Print(resp.Header)
+	c.logger.Print("Response code ", code, " with body:", string(body))
 
 	if resp.StatusCode < 200 || 300 <= resp.StatusCode {
 		return errors.New(fmt.Sprintf("Got status code %d", resp.StatusCode))
@@ -46,15 +51,17 @@ func (c *Client) PrivatePostJson(url string, requestV, responseV interface{}) er
 	if err != nil {
 		return err
 	}
-	log.Print("Request body: ", string(reqBody))
+	c.logger.Print("Request body: ", string(reqBody))
 
 	req, err := http.NewRequest("POST", url, bytes.NewReader(reqBody))
 	if err != nil {
 		return err
 	}
-	req.Header.Add("miraiex-access-key", c.ApiKey)
+	req.Header.Add("miraiex-access-key", c.apiKey)
 	req.Header.Add("Content-Type", "application/json")
 
+	c.logger.Println("POST", url)
+	c.logger.Println("POST headers:", maskSecretHeaders(req.Header))
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("do: %w", err)
@@ -66,7 +73,8 @@ func (c *Client) PrivatePostJson(url string, requestV, responseV interface{}) er
 	if err != nil {
 		return err
 	}
-	log.Print("Response body:", string(body))
+	code := strconv.Itoa(resp.StatusCode)
+	c.logger.Print("Response code", code, "with body:", string(body))
 
 	if resp.StatusCode < 200 || 300 <= resp.StatusCode {
 		return errors.New(fmt.Sprintf("Got status code %d", resp.StatusCode))
@@ -129,3 +137,17 @@ func (c *Client) CreateOrder(market Market, orderType OrderType, priceFiat FiatA
 	err := c.PrivatePostJson(url, req, &resp)
 	return string(resp.Id), err
 }
+
+//2021/01/27 23:12:28 Request body: {"market":"BTCNOK","type":"Bid","price":"269861.54","amount":"0.000100"}
+//2021/01/27 23:12:28 Response body:{"name":"SecurityLevelTooLow","message":"The user's security level is too low"}
+
+// Also 2021/01/26 17:31:11 Response body:<!DOCTYPE html>
+//<html lang="en">
+//<head>
+//<meta charset="utf-8">
+//<title>Error</title>
+//</head>
+//<body>
+//<pre>Internal Server Error</pre>
+//</body>
+//</html>

@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/roessland/miraiex-dca/miraiex-dca/models"
-	"log"
-
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"time"
 
 	"github.com/roessland/miraiex-dca/miraiex"
 	"github.com/roessland/miraiex-dca/miraiex-dca/storage"
@@ -40,6 +40,9 @@ func main() {
 		panic(fmt.Errorf("Fatal error loading config file: %s \n", err))
 	}
 
+	// Initiate logging
+	log := logrus.New()
+
 	// Initiate database
 	dbPath := getDbPath()
 	repo, err := storage.NewRepo(dbPath)
@@ -52,20 +55,12 @@ func main() {
 	apiKey := viperMustGetString(apiKeyConfigKey)
 	clientID := viperMustGetString(clientIDConfigKey)
 	secretKey := viperMustGetString(secretKeyConfigKey)
-	mxClient := miraiex.NewClient().SetAuthentication(apiKey, clientID, secretKey)
-	fmt.Println(mxClient.GetBalances())
-
-	// Print all orders in DB
-	orders, err := repo.GetOrders()
-	if err != nil {
-		panic(err)
-	}
-	for _, o := range orders {
-		fmt.Println("DB order: ", o)
-	}
+	mxClient := miraiex.NewClient(log).SetAuthentication(apiKey, clientID, secretKey)
+	balances, err := mxClient.GetBalances()
+	log.WithField("balances", balances).Info()
 
 	// Get current price of BTC
-	btcTicker, err := miraiex.GetTicker(miraiex.BTCNOK)
+	btcTicker, err := mxClient.GetTicker(miraiex.BTCNOK)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -75,9 +70,23 @@ func main() {
 	// Buy BTC. Uncomment the following lines to buy the minimum allowed amount of Bitcoin.
 	btcPrice := btcTicker.Ask
 	var btcAmount miraiex.CryptoAmount = 0.0001
-	orderId, err := mxClient.CreateOrder(miraiex.BTCNOK, miraiex.BidMaxPrice, btcPrice, btcAmount)
 	totalPrice := miraiex.FiatAmount(btcAmount) * btcPrice
-	log.Printf("Created order %s for %.6f mBTC @ %.2f NOK, for a total price of %.2f NOK + 0.5%% fees", orderId, 1000*btcAmount, btcPrice, totalPrice)
+	logFields := log.WithFields(logrus.Fields{
+		"market":        miraiex.BTCNOK,
+		"order_type":    miraiex.BidMaxPrice,
+		"price_per_btc": btcPrice,
+		"amount_btc":    btcAmount,
+		"total_price":   totalPrice,
+	})
+	logFields.WithField("event", "miraiex.order.create.start").Info()
+	orderId, err := mxClient.CreateOrder(miraiex.BTCNOK, miraiex.BidMaxPrice, btcPrice, btcAmount)
+	logFields = logFields.WithField("order_id", orderId)
+	success := orderId != "" && err == nil
+	if !success {
+		logFields.WithField("event", "miraiex.order.create.failed").WithError(err).Error()
+	} else {
+		logFields.WithField("event", "miraiex.order.create.success").Info()
+	}
 
 	// Save order to database
 	order := models.Order{
@@ -86,8 +95,9 @@ func main() {
 		Price:      float64(btcPrice),
 		Amount:     float64(btcAmount),
 		Market:     string(miraiex.BTCNOK),
+		Time:       time.Now(),
 	}
-	err = repo.CreateOrder(&order)
+	_, err = repo.CreateOrder(&order)
 	if err != nil {
 		panic(err)
 	}

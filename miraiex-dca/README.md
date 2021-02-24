@@ -2,6 +2,13 @@
 
 Command Line Interface (CLI) for å kjøpte BitCoin på MiraiEx.
 
+
+## TOODO
+
+2021/01/27 23:12:28 Request body: {"market":"BTCNOK","type":"Bid","price":"269861.54","amount":"0.000100"}
+2021/01/27 23:12:28 Response body:{"name":"SecurityLevelTooLow","message":"The user's security level is too low"}
+2021/01/27 23:12:28 Created order  for 0.100000 mBTC @ 269861.54 NOK, for a total price of 26.99 NOK + 0.5% fees
+
 ## miraiex-dca cron
 
 Kommandoen `miraiex-dca cron` kjøres som en scheduled jobb hvert femte minutt,

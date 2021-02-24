@@ -1,7 +1,7 @@
 package main
 
-// const ApiKey = "abcde"
+// const apiKey = "abcde"
 
-// const ClientID = "abcde"
+// const clientID = "abcde"
 
-// const SecretKey = "abcde"
+// const secretKey = "abcde"

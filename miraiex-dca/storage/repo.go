@@ -2,7 +2,6 @@ package storage
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/roessland/miraiex-dca/miraiex-dca/models"
 	"github.com/rs/xid"
 	"go.etcd.io/bbolt"
@@ -38,8 +37,9 @@ func (repo *Repo) Close() {
 	_ = repo.db.Close()
 }
 
-func (repo *Repo) CreateOrder(o *models.Order) error {
-	return repo.db.Update(func(tx *bbolt.Tx) error {
+func (repo *Repo) CreateOrder(o *models.Order) (string, error) {
+	var orderId string
+	err := repo.db.Update(func(tx *bbolt.Tx) error {
 		// Retrieve the users bucket.
 		// This should be created when the DB is first opened.
 		b := tx.Bucket(ordersBucketName)
@@ -60,9 +60,10 @@ func (repo *Repo) CreateOrder(o *models.Order) error {
 		}
 
 		// Persist bytes to users bucket.
-		fmt.Println("id is", id.String())
+		orderId = id.String()
 		return b.Put(id[:], buf)
 	})
+	return orderId, err
 }
 
 func (repo *Repo) GetOrders() ([]models.Order, error) {
